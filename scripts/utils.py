@@ -1,9 +1,19 @@
 import json
+import os
 import re
 import random
+import sqlite3
+
+import gdown
 import numpy as np
 import torch
+from multiprocessing import Process, Manager
+from tqdm.notebook import tqdm
 
+def download_spider_dataset():
+    url = "https://drive.google.com/uc?id=1403EGqzIDoHMdQF4c9Bkyl7dZLZ5Wt6J"
+    output = "spider_data.zip"
+    gdown.download(url, output, quiet=False)
 
 def set_seed(seed):
     random.seed(seed)
@@ -94,3 +104,83 @@ def extract_sql(response):
           return fallback.group(1).strip()
       else:
           return response
+      
+def _run_query(db_path, query, return_dict):
+  try:
+    conn = sqlite3.connect(db_path, timeout=5)
+    cursor = conn.cursor()
+    cursor.execute(query)
+    results = cursor.fetchall()
+    conn.close()
+    return_dict["success"] = True
+    return_dict["results"] = results
+    return_dict["error"] = None
+  except Exception as e:
+    return_dict["success"] = False
+    return_dict["results"] = None
+    return_dict["error"] = str(e)
+
+def execute_and_fetch_with_timeout(db_path, query, timeout_sec=5):
+  with Manager() as manager:
+    return_dict = manager.dict()
+
+    p = Process(target=_run_query, args=(db_path, query, return_dict))
+    p.start()
+    p.join(timeout_sec)
+
+    if p.is_alive():
+      p.terminate()
+      p.join()
+      return False, None, f"Timeout: consulta excedeu {timeout_sec} segundos"
+    
+    success = return_dict.get("success", False)
+    results = return_dict.get("results", None)
+    error = return_dict.get("error", "Unknown error" if not success else None)
+
+    return success, results, error
+
+def evaluate(results):
+  execution_match = 0
+  total_evaluated = 0
+
+  for row in tqdm(results):
+    db_id = row["db_id"]
+    db_path = os.path.join("spider/spider_data/database", db_id, f"{db_id}.sqlite")
+
+    if not os.path.exists(db_path):
+      row["execution_accuracy"] = "DB_NOT_FOUND"
+      raise Exception(f"DB not found: {db_path}")
+      continue
+
+    gold_query = row["gold_sql"]
+    predicted_query = row["predicted_sql"]
+
+    # Executa gold
+    gold_success, gold_result, gold_error = execute_and_fetch_with_timeout(db_path, gold_query)
+
+    # Executa predicted
+    pred_success, pred_result, pred_error = execute_and_fetch_with_timeout(db_path, predicted_query)
+
+    # Avaliação
+    if gold_success and pred_success:
+      total_evaluated += 1
+
+      pred_set = set(pred_result)
+      gold_set = set(gold_result)
+
+      if pred_set == gold_set:
+        execution_match += 1
+        row["execution_accuracy"] = "MATCH"
+      else:
+        row["execution_accuracy"] = "MISMATCH"
+    else:
+      error_msg = ""
+      if not gold_success:
+        error_msg += f"GOLD_FAIL: {gold_error} | "
+      if not pred_success:
+        error_msg += f"PRED_FAIL: {pred_error}"
+      row["execution_accuracy"] = error_msg.strip()
+
+  print(f"Total comparado (com sucesso em ambas): {total_evaluated}")
+  print(f"✔️ Matches: {execution_match}")
+  print(f"❌ Mismatches: {total_evaluated - execution_match}")

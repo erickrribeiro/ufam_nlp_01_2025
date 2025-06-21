@@ -8,3 +8,4 @@
 .env
 .venv
 custom_metrics/spider
+spider_data.zip
