@@ -1,14 +1,19 @@
 import json
 import os
+import pandas as pd
 import re
 import random
 import sqlite3
+from enum import Enum
+from multiprocessing import Process, Manager
 
 import gdown
 import numpy as np
 import torch
-from multiprocessing import Process, Manager
+from deepeval.benchmarks import MMLU
+from deepeval.benchmarks.mmlu.task import MMLUTask
 from tqdm.notebook import tqdm
+from constants import CATEGORY_MAPPING
 
 def download_spider_dataset():
     url = "https://drive.google.com/uc?id=1403EGqzIDoHMdQF4c9Bkyl7dZLZ5Wt6J"
@@ -162,7 +167,7 @@ def evaluate(results):
     pred_success, pred_result, pred_error = execute_and_fetch_with_timeout(db_path, predicted_query)
 
     # Avaliação
-    if gold_success and pred_success:
+    if gold_success and pred_success: # Todo: melhorar
       total_evaluated += 1
 
       pred_set = set(pred_result)
@@ -184,3 +189,28 @@ def evaluate(results):
   print(f"Total comparado (com sucesso em ambas): {total_evaluated}")
   print(f"✔️ Matches: {execution_match}")
   print(f"❌ Mismatches: {total_evaluated - execution_match}")
+
+
+def map_task_to_category(task: MMLUTask) -> str:
+  for category, tasks in CATEGORY_MAPPING.items():
+    if task in tasks:
+      return category
+  return "Desconhecido"
+
+def run_mmlu(model, mm_tasks, batch_size):
+  benchmark = MMLU(
+      tasks=mm_tasks, 
+      n_shots=4
+  )
+  benchmark.evaluate(model=model, batch_size=batch_size)
+
+  results = []
+  for _, row in benchmark.task_scores.iterrows():  
+    task = MMLUTask(row.Task)
+    results.append({
+        "task": task.value,
+        "accuracy": row.Score,
+        "category": map_task_to_category(task)
+    })
+
+  return pd.DataFrame(results)
