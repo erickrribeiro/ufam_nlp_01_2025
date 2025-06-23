@@ -1,0 +1,40 @@
+task,accuracy,category
+abstract_algebra,0.01,STEM
+astronomy,0.17105263157894737,STEM
+college_biology,0.2777777777777778,STEM
+college_chemistry,0.21,STEM
+college_computer_science,0.24,STEM
+college_mathematics,0.16,STEM
+college_physics,0.19607843137254902,STEM
+conceptual_physics,0.1574468085106383,STEM
+electrical_engineering,0.25517241379310346,STEM
+elementary_mathematics,0.1984126984126984,STEM
+high_school_biology,0.2161290322580645,STEM
+high_school_chemistry,0.15270935960591134,STEM
+high_school_computer_science,0.23,STEM
+high_school_mathematics,0.2037037037037037,STEM
+high_school_physics,0.18543046357615894,STEM
+high_school_statistics,0.16666666666666666,STEM
+machine_learning,0.16071428571428573,STEM
+econometrics,0.16666666666666666,STEM
+high_school_european_history,0.09090909090909091,Humanidades
+high_school_world_history,0.17721518987341772,Humanidades
+high_school_us_history,0.16666666666666666,Humanidades
+philosophy,0.07717041800643087,Humanidades
+prehistory,0.2006172839506173,Humanidades
+world_religions,0.26900584795321636,Humanidades
+logical_fallacies,0.13496932515337423,Humanidades
+formal_logic,0.09523809523809523,Humanidades
+high_school_government_and_politics,0.22797927461139897,Ciências Sociais
+high_school_macroeconomics,0.2,Ciências Sociais
+high_school_microeconomics,0.20588235294117646,Ciências Sociais
+international_law,0.2066115702479339,Ciências Sociais
+jurisprudence,0.18518518518518517,Ciências Sociais
+professional_law,0.10104302477183832,Ciências Sociais
+professional_psychology,0.24183006535947713,Ciências Sociais
+sociology,0.23880597014925373,Ciências Sociais
+us_foreign_policy,0.25,Ciências Sociais
+security_studies,0.10612244897959183,Ciências Sociais
+public_relations,0.22727272727272727,Ciências Sociais
+marketing,0.2905982905982906,Ciências Sociais
+management,0.17475728155339806,Ciências Sociais
